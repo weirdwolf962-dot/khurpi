@@ -732,7 +732,7 @@ def render_messages():
                 </div>""")
 
 def generate_pdf_report(d, lc="en"):
-    """Generate a multilingual PDF report with proper Unicode support and word-wrapped cells."""
+    """Generate a multilingual PDF. FreeSans covers Devanagari+Gurmukhi; FreeSerif covers Arabic(Urdu)."""
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import cm
@@ -742,139 +742,171 @@ def generate_pdf_report(d, lc="en"):
     from reportlab.pdfbase.ttfonts import TTFont
     import io, os, urllib.request
 
-    # ── Font setup: try system fonts, then download NotoSans as fallback ──
+    # ── Font selection per script ──
+    # FreeSans  → full Devanagari (Hindi/Marathi) + Gurmukhi (Punjabi) + Latin
+    # FreeSerif → full Arabic (Urdu) + Bengali + Tamil + Latin
+    # Fallback  → Helvetica (Latin only) if system fonts missing
+    FREESANS_R = "/usr/share/fonts/truetype/freefont/FreeSans.ttf"
+    FREESANS_B = "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"
+    FREESERIF_R = "/usr/share/fonts/truetype/freefont/FreeSerif.ttf"
+    FREESERIF_B = "/usr/share/fonts/truetype/freefont/FreeSerifBold.ttf"
+
+    # Arabic/RTL scripts use FreeSerif; Indic scripts use FreeSans
+    USE_SERIF = lc in ("ur", "bn", "ta", "ml", "as")
+
     font_name = "Helvetica"
     bold_font = "Helvetica-Bold"
 
-    system_fonts = [
-        ("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",  "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf"),
-        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",      "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
-        ("/usr/share/fonts/truetype/freefont/FreeSans.ttf",      "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"),
-    ]
-    for rp, bp in system_fonts:
-        if os.path.exists(rp):
-            try:
-                pdfmetrics.registerFont(TTFont("UniFont", rp))
-                pdfmetrics.registerFont(TTFont("UniFont-Bold", bp if os.path.exists(bp) else rp))
-                font_name, bold_font = "UniFont", "UniFont-Bold"
-                break
-            except: pass
+    try:
+        if USE_SERIF and os.path.exists(FREESERIF_R):
+            if "FreeSerif" not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont("FreeSerif", FREESERIF_R))
+                bp = FREESERIF_B if os.path.exists(FREESERIF_B) else FREESERIF_R
+                pdfmetrics.registerFont(TTFont("FreeSerif-Bold", bp))
+            font_name, bold_font = "FreeSerif", "FreeSerif-Bold"
+        elif os.path.exists(FREESANS_R):
+            if "FreeSans" not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont("FreeSans", FREESANS_R))
+                pdfmetrics.registerFont(TTFont("FreeSans-Bold", FREESANS_B))
+            font_name, bold_font = "FreeSans", "FreeSans-Bold"
+    except Exception:
+        pass
 
-    # If still Helvetica (Streamlit Cloud), download NotoSans
+    # If on Streamlit Cloud (no system fonts), try downloading NotoSans
     if font_name == "Helvetica":
-        cache_r = "/tmp/NotoSans-Regular.ttf"
-        cache_b = "/tmp/NotoSans-Bold.ttf"
-        urls = [
-            ("https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf", cache_r),
-            ("https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Bold.ttf", cache_b),
-        ]
         try:
-            for url, path in urls:
+            cache_r = "/tmp/NotoSans-Regular.ttf"
+            cache_b = "/tmp/NotoSans-Bold.ttf"
+            for url, path in [
+                ("https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf", cache_r),
+                ("https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Bold.ttf", cache_b),
+            ]:
                 if not os.path.exists(path):
                     urllib.request.urlretrieve(url, path)
-            pdfmetrics.registerFont(TTFont("UniFont", cache_r))
-            pdfmetrics.registerFont(TTFont("UniFont-Bold", cache_b))
-            font_name, bold_font = "UniFont", "UniFont-Bold"
-        except: pass
+            if "NotoSans" not in pdfmetrics.getRegisteredFontNames():
+                pdfmetrics.registerFont(TTFont("NotoSans", cache_r))
+                pdfmetrics.registerFont(TTFont("NotoSans-Bold", cache_b))
+            font_name, bold_font = "NotoSans", "NotoSans-Bold"
+        except Exception:
+            pass  # Stay on Helvetica — English-only PDF
 
-    # ── Data extraction ──
-    result    = d.get("result", {})
-    plant     = d.get("plant_type", "Unknown")
-    disease   = result.get("disease_name", "Unknown")
-    severity  = result.get("severity", "unknown").title()
-    conf      = result.get("confidence", 0)
-    region    = d.get("region", "")
-    soil      = d.get("soil", "")
-    infected  = d.get("infected_count", 0)
-    total     = d.get("total_plants", 100)
-    loss_pct  = calc_loss_pct(d.get("severity", severity.lower()), infected, total)
+    # ── Data ──
+    result   = d.get("result", {})
+    plant    = d.get("plant_type", "Unknown")
+    disease  = result.get("disease_name", "Unknown")
+    severity = result.get("severity", "unknown").title()
+    conf     = result.get("confidence", 0)
+    region   = d.get("region", "")
+    soil     = d.get("soil", "")
+    infected = d.get("infected_count", 0)
+    total    = d.get("total_plants", 100)
+    loss_pct = calc_loss_pct(d.get("severity", severity.lower()), infected, total)
 
-    # ── Labels ──
+    # ── Labels per language (always fall back to English for unsupported scripts) ──
     LABELS = {
-        "en": dict(title="Kisan AI — Plant Disease Report", plant="Plant", disease="Disease",
-                   severity="Severity", confidence="Confidence", region="Region", soil="Soil Type",
+        "en": dict(title="Kisan AI — Plant Disease Report",
+                   plant="Plant", disease="Disease", severity="Severity",
+                   confidence="Confidence", region="Region", soil="Soil Type",
                    infected="Infected", total="Total Plants", loss="Est. Yield Loss",
-                   actions="Immediate Actions", organic="Organic Treatments", chemical="Chemical Treatments",
-                   prevention="Long-term Prevention", notes="Plant-Specific Notes",
-                   treatment="Treatment", qty="Quantity", price="Price (Rs.)", generated="Generated by Kisan AI"),
-        "hi": dict(title="किसान AI — पौधे की बीमारी रिपोर्ट", plant="पौधा", disease="बीमारी",
-                   severity="गंभीरता", confidence="विश्वास", region="क्षेत्र", soil="मिट्टी का प्रकार",
+                   actions="Immediate Actions", organic="Organic Treatments",
+                   chemical="Chemical Treatments", prevention="Long-term Prevention",
+                   notes="Plant-Specific Notes", treatment="Treatment",
+                   qty="Quantity", price="Price (Rs.)", generated="Generated by Kisan AI"),
+        "hi": dict(title="किसान AI — पौधे की बीमारी रिपोर्ट",
+                   plant="पौधा", disease="बीमारी", severity="गंभीरता",
+                   confidence="विश्वास", region="क्षेत्र", soil="मिट्टी का प्रकार",
                    infected="संक्रमित", total="कुल पौधे", loss="उपज हानि",
-                   actions="तुरंत करें", organic="जैविक उपचार", chemical="रासायनिक उपचार",
-                   prevention="दीर्घकालिक रोकथाम", notes="पौधे विशेष नोट्स",
-                   treatment="उपचार", qty="मात्रा", price="कीमत (Rs.)", generated="किसान AI द्वारा"),
-        "pa": dict(title="ਕਿਸਾਨ AI — ਪੌਦੇ ਦੀ ਬਿਮਾਰੀ ਰਿਪੋਰਟ", plant="ਪੌਦਾ", disease="ਬਿਮਾਰੀ",
-                   severity="ਗੰਭੀਰਤਾ", confidence="ਭਰੋਸਾ", region="ਖੇਤਰ", soil="ਮਿੱਟੀ ਦੀ ਕਿਸਮ",
+                   actions="तुरंत करें", organic="जैविक उपचार",
+                   chemical="रासायनिक उपचार", prevention="दीर्घकालिक रोकथाम",
+                   notes="पौधे विशेष नोट्स", treatment="उपचार",
+                   qty="मात्रा", price="कीमत (Rs.)", generated="किसान AI द्वारा"),
+        "pa": dict(title="ਕਿਸਾਨ AI — ਪੌਦੇ ਦੀ ਬਿਮਾਰੀ ਰਿਪੋਰਟ",
+                   plant="ਪੌਦਾ", disease="ਬਿਮਾਰੀ", severity="ਗੰਭੀਰਤਾ",
+                   confidence="ਭਰੋਸਾ", region="ਖੇਤਰ", soil="ਮਿੱਟੀ ਦੀ ਕਿਸਮ",
                    infected="ਸੰਕਰਮਿਤ", total="ਕੁੱਲ ਪੌਦੇ", loss="ਝਾੜ ਨੁਕਸਾਨ",
-                   actions="ਤੁਰੰਤ ਕਰੋ", organic="ਜੈਵਿਕ ਇਲਾਜ", chemical="ਰਸਾਇਣਕ ਇਲਾਜ",
-                   prevention="ਲੰਬੇ ਸਮੇਂ ਦੀ ਰੋਕਥਾਮ", notes="ਪੌਦੇ ਸੰਬੰਧੀ ਨੋਟਸ",
-                   treatment="ਇਲਾਜ", qty="ਮਾਤਰਾ", price="ਕੀਮਤ (Rs.)", generated="ਕਿਸਾਨ AI ਦੁਆਰਾ"),
+                   actions="ਤੁਰੰਤ ਕਰੋ", organic="ਜੈਵਿਕ ਇਲਾਜ",
+                   chemical="ਰਸਾਇਣਕ ਇਲਾਜ", prevention="ਲੰਬੇ ਸਮੇਂ ਦੀ ਰੋਕਥਾਮ",
+                   notes="ਪੌਦੇ ਸੰਬੰਧੀ ਨੋਟਸ", treatment="ਇਲਾਜ",
+                   qty="ਮਾਤਰਾ", price="ਕੀਮਤ (Rs.)", generated="ਕਿਸਾਨ AI ਦੁਆਰਾ"),
+        "mr": dict(title="किसान AI — वनस्पती रोग अहवाल",
+                   plant="पीक", disease="रोग", severity="तीव्रता",
+                   confidence="विश्वास", region="क्षेत्र", soil="माती प्रकार",
+                   infected="संक्रमित", total="एकूण झाडे", loss="उत्पादन नुकसान",
+                   actions="तातडीचे उपाय", organic="जैविक उपचार",
+                   chemical="रासायनिक उपचार", prevention="दीर्घकालीन प्रतिबंध",
+                   notes="विशेष नोट्स", treatment="उपचार",
+                   qty="प्रमाण", price="किंमत (Rs.)", generated="किसान AI द्वारे"),
+        "ur": dict(title="کسان AI — پودے کی بیماری رپورٹ",
+                   plant="پودا", disease="بیماری", severity="شدت",
+                   confidence="اعتماد", region="علاقہ", soil="مٹی کی قسم",
+                   infected="متاثرہ", total="کل پودے", loss="پیداوار نقصان",
+                   actions="فوری اقدامات", organic="نامیاتی علاج",
+                   chemical="کیمیائی علاج", prevention="طویل مدتی روک تھام",
+                   notes="خصوصی نوٹس", treatment="علاج",
+                   qty="مقدار", price="قیمت (Rs.)", generated="کسان AI کی طرف سے"),
     }
     L = LABELS.get(lc, LABELS["en"])
 
     # ── Colors ──
-    GREEN      = colors.HexColor("#2d7a1f")
-    LT_GREEN   = colors.HexColor("#e8f5e2")
-    BLUE_HDR   = colors.HexColor("#1a6896")
-    LT_BLUE    = colors.HexColor("#e8f0f8")
-    DARK       = colors.HexColor("#1a1a1a")
-    GRAY       = colors.HexColor("#666666")
-    SEV_COLOR  = {"healthy": colors.HexColor("#2e7d32"), "mild": colors.HexColor("#1565c0"),
-                  "moderate": colors.HexColor("#e65100"), "severe": colors.HexColor("#b71c1c")}.get(severity.lower(), GRAY)
+    GREEN    = colors.HexColor("#2d7a1f")
+    LT_GREEN = colors.HexColor("#e8f5e2")
+    BLUE_HDR = colors.HexColor("#1a6896")
+    LT_BLUE  = colors.HexColor("#e8f0f8")
+    DARK     = colors.HexColor("#1a1a1a")
+    GRAY     = colors.HexColor("#666666")
 
-    # ── Helper: Paragraph with word-wrap ──
+    # ── Paragraph helper ──
     def P(text, size=9, bold=False, color=DARK, align="LEFT", space_after=3):
-        align_map = {"LEFT": 0, "CENTER": 1, "RIGHT": 2}
-        s = ParagraphStyle("p", fontName=bold_font if bold else font_name,
-                           fontSize=size, textColor=color, leading=size*1.45,
-                           spaceAfter=space_after, alignment=align_map.get(align, 0),
-                           wordWrap='CJK')
-        return Paragraph(str(text), s)
+        amap = {"LEFT": 0, "CENTER": 1, "RIGHT": 2}
+        st_ = ParagraphStyle("p",
+            fontName=bold_font if bold else font_name,
+            fontSize=size, textColor=color, leading=size * 1.5,
+            spaceAfter=space_after, alignment=amap.get(align, 0),
+            wordWrap="CJK")
+        return Paragraph(str(text), st_)
 
     def sec(title):
-        return [Spacer(1, 0.25*cm),
+        return [Spacer(1, 0.25 * cm),
                 P(title, size=11, bold=True, color=GREEN, space_after=2),
                 HRFlowable(width="100%", thickness=1, color=LT_GREEN, spaceAfter=4)]
 
-    # ── Build PDF ──
+    # ── Build ──
     buf = io.BytesIO()
     doc = SimpleDocTemplate(buf, pagesize=A4,
                             leftMargin=1.8*cm, rightMargin=1.8*cm,
                             topMargin=1.8*cm, bottomMargin=1.8*cm)
-    W = A4[0] - 3.6*cm   # usable width
+    W = A4[0] - 3.6 * cm
 
     story = []
-
-    # Title
     story.append(P(L["title"], size=17, bold=True, color=GREEN, align="CENTER", space_after=3))
     story.append(P(datetime.now().strftime("%d %B %Y  |  %I:%M %p"), size=8, color=GRAY, align="CENTER", space_after=6))
     story.append(HRFlowable(width="100%", thickness=1.5, color=GREEN, spaceAfter=8))
 
-    # Summary table — 4 columns, Paragraph cells to prevent overflow
+    # Summary table with Paragraph cells (no overflow)
     c1, c2, c3, c4 = W*0.18, W*0.32, W*0.18, W*0.32
     def row(k1, v1, k2="", v2=""):
-        return [P(k1, bold=True, color=GREEN), P(str(v1)),
-                P(k2, bold=True, color=GREEN) if k2 else "", P(str(v2)) if v2 else ""]
+        return [P(k1, bold=True, color=GREEN),  P(str(v1)),
+                P(k2, bold=True, color=GREEN) if k2 else P(""),
+                P(str(v2)) if v2 else P("")]
 
     summary = [
-        row(L["plant"],    plant,        L["region"],   region),
-        row(L["disease"],  disease,      L["soil"],     soil),
+        row(L["plant"],    plant,        L["region"],     region),
+        row(L["disease"],  disease,      L["soil"],       soil),
         row(L["severity"], severity,     L["confidence"], f"{conf}%"),
         row(L["infected"], f"{infected}/{total}", L["loss"], f"{loss_pct}%"),
     ]
     st_ = Table(summary, colWidths=[c1, c2, c3, c4])
     st_.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.white),
-        ('ROWBACKGROUNDS', (0,0), (-1,-1), [LT_GREEN, colors.white]),
-        ('GRID', (0,0), (-1,-1), 0.4, colors.HexColor("#cccccc")),
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('PADDING', (0,0), (-1,-1), 5),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ("ROWBACKGROUNDS", (0,0), (-1,-1), [LT_GREEN, colors.white]),
+        ("GRID", (0,0), (-1,-1), 0.4, colors.HexColor("#cccccc")),
+        ("VALIGN", (0,0), (-1,-1), "TOP"),
+        ("TOPPADDING", (0,0), (-1,-1), 6),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+        ("LEFTPADDING", (0,0), (-1,-1), 5),
+        ("RIGHTPADDING", (0,0), (-1,-1), 5),
     ]))
     story.append(st_)
 
-    # ── Treatment table helper ──
     def treatment_table(items, ttype, hdr_color, lt_color):
         rows = [[P(L["treatment"], bold=True, color=colors.white, size=9),
                  P(L["qty"],       bold=True, color=colors.white, size=9),
@@ -888,49 +920,44 @@ def generate_pdf_report(d, lc="en"):
             return
         tbl = Table(rows, colWidths=[W*0.40, W*0.38, W*0.22])
         tbl.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), hdr_color),
-            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, lt_color]),
-            ('GRID', (0,0), (-1,-1), 0.4, colors.HexColor("#cccccc")),
-            ('VALIGN', (0,0), (-1,-1), 'TOP'),
-            ('PADDING', (0,0), (-1,-1), 5),
-            ('TOPPADDING', (0,0), (-1,-1), 6),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+            ("BACKGROUND", (0,0), (-1,0), hdr_color),
+            ("ROWBACKGROUNDS", (0,1), (-1,-1), [colors.white, lt_color]),
+            ("GRID", (0,0), (-1,-1), 0.4, colors.HexColor("#cccccc")),
+            ("VALIGN", (0,0), (-1,-1), "TOP"),
+            ("TOPPADDING", (0,0), (-1,-1), 6),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 6),
+            ("LEFTPADDING", (0,0), (-1,-1), 5),
+            ("RIGHTPADDING", (0,0), (-1,-1), 5),
         ]))
         story.append(tbl)
 
-    # Immediate actions
     actions = result.get("immediate_action", [])
     if actions:
         story += sec(f"⚡ {L['actions']}")
         for i, a in enumerate(actions, 1):
             story.append(P(f"{i}.  {a}", size=9, space_after=4))
 
-    # Organic treatments
     org_treats = result.get("organic_treatments", [])
     if org_treats:
         story += sec(f"🌿 {L['organic']}")
         treatment_table(org_treats, "organic", GREEN, LT_GREEN)
 
-    # Chemical treatments
     chem_treats = result.get("chemical_treatments", [])
     if chem_treats:
         story += sec(f"⚗️ {L['chemical']}")
         treatment_table(chem_treats, "chemical", BLUE_HDR, LT_BLUE)
 
-    # Prevention
     prevention = result.get("prevention_long_term", [])
     if prevention:
         story += sec(f"🛡️ {L['prevention']}")
         for p in prevention[:5]:
             story.append(P(f"•  {p}", size=9, space_after=4))
 
-    # Notes
     notes = result.get("plant_specific_notes", "")
     if notes:
         story += sec(f"📌 {L['notes']}")
         story.append(P(notes, size=9, color=DARK))
 
-    # Footer
     story.append(Spacer(1, 0.6*cm))
     story.append(HRFlowable(width="100%", thickness=1, color=LT_GREEN))
     story.append(P(f"{L['generated']}  ·  {datetime.now().strftime('%d/%m/%Y')}",
@@ -1065,20 +1092,37 @@ def render_diagnosis_card(d):
       </div>
     </div>""")
 
-    # PDF Download button
+    # ── Single PDF download button (generates inline, no intermediate trigger) ──
     lc = d.get("lang_code", "en")
-    pdf_label = {"en": "📄 Download PDF Report", "hi": "📄 PDF रिपोर्ट डाउनलोड करें", "pa": "📄 PDF ਰਿਪੋਰਟ ਡਾਊਨਲੋਡ ਕਰੋ"}.get(lc, "📄 Download PDF Report")
-    if st.button(pdf_label, key=f"pdf_btn_{d.get('timestamp','0').replace(':','_')}", use_container_width=False):
-        with st.spinner("Generating PDF..." if lc == "en" else "PDF बन रहा है..." if lc == "hi" else "PDF ਬਣ ਰਿਹਾ ਹੈ..."):
-            pdf_bytes = generate_pdf_report(d, lc)
-            fname = f"KisanAI_{plant}_{disease.replace(' ','_')[:20]}.pdf"
-            st.download_button(
-                label="⬇️ Click to Save PDF" if lc == "en" else "⬇️ PDF सेव करें" if lc == "hi" else "⬇️ PDF ਸੇਵ ਕਰੋ",
-                data=pdf_bytes,
-                file_name=fname,
-                mime="application/pdf",
-                key=f"pdf_dl_{d.get('timestamp','0').replace(':','_')}",
-            )
+    PDF_LABELS = {
+        "en": "📄 Download PDF Report",
+        "hi": "📄 PDF रिपोर्ट डाउनलोड करें",
+        "pa": "📄 PDF ਰਿਪੋਰਟ ਡਾਊਨਲੋਡ ਕਰੋ",
+        "mr": "📄 PDF अहवाल डाउनलोड करा",
+        "te": "📄 PDF నివేదికను డౌన్లోడ్ చేయండి",
+        "ta": "📄 PDF அறிக்கையை பதிவிறக்கவும்",
+        "kn": "📄 PDF ವರದಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
+        "bn": "📄 PDF রিপোর্ট ডাউনলোড করুন",
+        "gu": "📄 PDF રિપોર્ટ ડાઉનલોડ કરો",
+        "ur": "📄 PDF رپورٹ ڈاؤنلوڈ کریں",
+        "or": "📄 PDF ରିପୋର୍ଟ ଡାଉନଲୋଡ କରନ୍ତୁ",
+        "ml": "📄 PDF റിപ്പോർട്ട് ഡൗൺലോഡ് ചെയ്യുക",
+        "as": "📄 PDF প্ৰতিবেদন ডাউনলোড কৰক",
+    }
+    btn_label = PDF_LABELS.get(lc, PDF_LABELS["en"])
+    fname = f"KisanAI_{plant}_{disease.replace(' ', '_')[:20]}.pdf"
+    try:
+        pdf_bytes = generate_pdf_report(d, lc)
+        st.download_button(
+            label=btn_label,
+            data=pdf_bytes,
+            file_name=fname,
+            mime="application/pdf",
+            key=f"pdf_dl_{d.get('timestamp','0').replace(':', '_').replace('.', '_')}",
+            use_container_width=False,
+        )
+    except Exception as e:
+        st.error(f"PDF generation failed: {e}")
 
 
 # ─────────────────────────────────────────────────────────────
