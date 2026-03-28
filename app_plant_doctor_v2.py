@@ -14,7 +14,7 @@ st.set_page_config(
     page_title="KisanAI",
     page_icon="assets/leaf.svg",
     layout="wide",
-    initial_sidebar_state="expanded",,
+    initial_sidebar_state="expanded",
 )
 
 # ══════════════════════════════════════════════════════════════
