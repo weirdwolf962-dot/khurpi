@@ -130,7 +130,7 @@ SOIL_TYPES = ["Black Soil (Regur)", "Red Soil", "Laterite Soil", "Alluvial Soil"
 # ─────────────────────────────────────────────────────────────
 # GLOBAL CSS — Glassmorphism Dark Theme
 # ─────────────────────────────────────────────────────────────
-st.markdown("""
+st.html("""
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -544,7 +544,7 @@ h1, h2, h3 { font-family: 'Poppins', sans-serif !important; color: var(--text) !
 /* Divider */
 hr { border-color: var(--glass-border) !important; margin: 16px 0 !important; }
 </style>
-""", unsafe_allow_html=True)
+""")
 
 # ─────────────────────────────────────────────────────────────
 # GEMINI CONFIG
