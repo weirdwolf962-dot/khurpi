@@ -1,5 +1,13 @@
 import streamlit as st
-import google.generativeai as genai
+try:
+    import google.generativeai as genai
+except ModuleNotFoundError:
+    st.error(
+        "⚠️ Missing dependency: `google-generativeai`\n\n"
+        "Add the following line to your **requirements.txt** and redeploy:\n\n"
+        "```\ngoogle-generativeai\n```"
+    )
+    st.stop()
 from PIL import Image
 import os
 import json
@@ -582,10 +590,41 @@ st.markdown(
 )
 
 # ============ GEMINI CONFIG ============
+_api_key = os.environ.get("GEMINI_API_KEY", "").strip()
+if not _api_key:
+    st.markdown(
+        """
+        <div style="background:#2a1010;border:1px solid #e05a5a;border-radius:12px;padding:24px 28px;margin:32px auto;max-width:560px;">
+            <div style="font-size:1.2rem;font-weight:600;color:#e05a5a;margin-bottom:8px;">⚠️ API Key Missing</div>
+            <div style="color:#dde8cc;font-size:0.95rem;line-height:1.65;">
+                <b>GEMINI_API_KEY</b> is not set in your environment.<br><br>
+                <b>To fix this on Streamlit Cloud:</b><br>
+                1. Go to your app → <i>Manage app</i> (bottom right)<br>
+                2. Open <i>Secrets</i> and add:<br>
+                <code style="background:#1c1c1c;padding:4px 10px;border-radius:6px;display:inline-block;margin-top:6px;">GEMINI_API_KEY = "your-key-here"</code><br><br>
+                Get a free key at <a href="https://aistudio.google.com/apikey" style="color:#86bc42;">aistudio.google.com/apikey</a>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.stop()
 try:
-    genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-except Exception:
-    st.error("GEMINI_API_KEY not found in environment variables!")
+    genai.configure(api_key=_api_key)
+except Exception as _e:
+    st.markdown(
+        f"""
+        <div style="background:#2a1010;border:1px solid #e05a5a;border-radius:12px;padding:24px 28px;margin:32px auto;max-width:560px;">
+            <div style="font-size:1.2rem;font-weight:600;color:#e05a5a;margin-bottom:8px;">⚠️ API Key Error</div>
+            <div style="color:#dde8cc;font-size:0.95rem;line-height:1.65;">
+                Could not configure Gemini with the provided key.<br>
+                Please verify your <b>GEMINI_API_KEY</b> in Streamlit Secrets.<br><br>
+                <span style="color:#8fa07a;font-size:0.85rem;">Error detail: {str(_e)}</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.stop()
 
 EXPERT_PROMPT_TEMPLATE = """You are an elite plant pathologist with 40 years of specialized experience diagnosing diseases in {plant_type}.
@@ -695,20 +734,24 @@ def get_treatment_info(treatment_type, treatment_name):
                 "cost": value,
                 "quantity": "As per package",
                 "dilution": "Follow label instructions",
+                "_matched": True,
             }
     for key, value in costs.items():
         if key.lower() in treatment_name.lower() or treatment_name.lower() in key.lower():
             if isinstance(value, dict):
-                return value
+                return dict(value, _matched=True)
             return {
                 "cost": value,
                 "quantity": "As per package",
                 "dilution": "Follow label instructions",
+                "_matched": True,
             }
+    default_cost = 300 if treatment_type == "organic" else 250
     return {
-        "cost": 300 if treatment_type == "organic" else 250,
+        "cost": default_cost,
         "quantity": "As per package",
         "dilution": "Follow label instructions",
+        "_matched": False,  # flag: fallback cost in use
     }
 
 
@@ -918,6 +961,7 @@ def render_diagnosis_and_treatments(result: dict, plant_type: str, infected_coun
             cost = info.get("cost", 300)
             quantity = info.get("quantity", "As per package")
             dilution = info.get("dilution", "Follow label instructions")
+            fallback_note = "" if info.get("_matched", True) else '<div style="font-size:0.78rem;color:#d4a12a;margin-top:4px;">⚠️ Estimated price — exact product not in database</div>'
             organic_total_block += cost
             st.markdown(
                 f"""
@@ -928,6 +972,7 @@ def render_diagnosis_and_treatments(result: dict, plant_type: str, infected_coun
                     <div class="pd-cost-info" style="margin-top: 8px; border-left: 5px solid #81c784;">
                         Cost: Rs {cost}
                     </div>
+                    {fallback_note}
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -948,6 +993,7 @@ def render_diagnosis_and_treatments(result: dict, plant_type: str, infected_coun
             cost = info.get("cost", 250)
             quantity = info.get("quantity", "As per package")
             dilution = info.get("dilution", "Follow label instructions")
+            fallback_note = "" if info.get("_matched", True) else '<div style="font-size:0.78rem;color:#d4a12a;margin-top:4px;">⚠️ Estimated price — exact product not in database</div>'
             chemical_total_block += cost
             st.markdown(
                 f"""
@@ -958,6 +1004,7 @@ def render_diagnosis_and_treatments(result: dict, plant_type: str, infected_coun
                     <div class="pd-cost-info" style="margin-top: 8px; border-left: 5px solid #64b5f6;">
                         Cost: Rs {cost}
                     </div>
+                    {fallback_note}
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -1130,19 +1177,32 @@ def validate_json_result(data):
 
 def generate_crop_rotation_plan(plant_type, region, soil_type, market_focus):
     if plant_type in CROP_ROTATION_DATA:
-        return CROP_ROTATION_DATA[plant_type]
+        base = CROP_ROTATION_DATA[plant_type].copy()
+        # Enrich the info with region/soil context via Gemini if possible
+        try:
+            model = genai.GenerativeModel("gemini-2.5-flash")
+            note_prompt = (
+                f"For a {plant_type} farmer in {region} with {soil_type} soil "
+                f"targeting {market_focus} markets, give ONE short paragraph (2-3 sentences) "
+                "of rotation advice tailored to their region and soil. Plain text only."
+            )
+            resp = model.generate_content(note_prompt)
+            base["regional_note"] = resp.text.strip()
+        except Exception:
+            base["regional_note"] = f"General rotation plan shown. For {region} with {soil_type}, apply local agronomist guidance."
+        return base
     else:
-        return get_manual_rotation_plan(plant_type)
+        return get_manual_rotation_plan(plant_type, region, soil_type, market_focus)
 
 
-def get_manual_rotation_plan(plant_name):
+def get_manual_rotation_plan(plant_name, region="India", soil_type="general", market_focus="Stable essentials"):
     try:
         model = genai.GenerativeModel("gemini-2.5-flash")
     except Exception:
         return None
-    prompt = f"""You are an agricultural expert with deep knowledge of crop rotation and soil health. For the plant: {plant_name}
+    prompt = f"""You are an agricultural expert for {region} with {soil_type} soil, targeting {market_focus} markets. For the plant: {plant_name}
 Provide ONLY a valid JSON response in this exact format (no markdown, no explanations, no code blocks):
-{{"rotations": ["Crop1", "Crop2", "Crop3"], "info": {{"{plant_name}": "Detailed info about {plant_name}", "Crop1": "Why good after {plant_name}", "Crop2": "Why follows Crop1", "Crop3": "Why completes cycle"}}}}"""
+{{"rotations": ["Crop1", "Crop2", "Crop3"], "info": {{"{plant_name}": "Detailed info about {plant_name}", "Crop1": "Why good after {plant_name}", "Crop2": "Why follows Crop1", "Crop3": "Why completes cycle"}}, "regional_note": "Specific advice for {region} with {soil_type} soil"}}"""
     try:
         response = model.generate_content(prompt)
         result = extract_json_robust(response.text)
@@ -1348,6 +1408,14 @@ if page == 'AI Plant Doctor':
                     confidence = result.get('confidence', 0)
                     if confidence < st.session_state.confidence_min:
                         st.warning(f'Low confidence ({confidence}%) — result may be unreliable.')
+                    # Ask user for plant counts so loss % is accurate
+                    st.markdown('<div class="pd-card" style="margin-top:12px;"><div class="pd-card-title">Field Information</div>', unsafe_allow_html=True)
+                    _col_ic, _col_tc = st.columns(2)
+                    with _col_ic:
+                        _infected = st.number_input('Infected plants', min_value=1, value=10, step=1, key='diag_infected_input', help='How many plants show disease symptoms?')
+                    with _col_tc:
+                        _total = st.number_input('Total plants in field', min_value=1, value=100, step=10, key='diag_total_input', help='Total number of plants you have.')
+                    st.markdown('</div>', unsafe_allow_html=True)
                     st.session_state.last_diagnosis = {
                         'plant_type': plant_type,
                         'disease_name': result.get('disease_name', 'Unknown'),
@@ -1356,7 +1424,8 @@ if page == 'AI Plant Doctor':
                         'confidence': confidence,
                         'organic_cost': 0,
                         'chemical_cost': 0,
-                        'infected_count': 50,
+                        'infected_count': int(_infected),
+                        'total_plants': int(_total),
                         'timestamp': datetime.now().isoformat(),
                         'result': result,
                     }
@@ -1453,7 +1522,7 @@ elif page == 'Crop Rotation Advisor':
         if plant_type:
             with st.spinner(f'Generating rotation plan for {plant_type}...'):
                 rots_data = generate_crop_rotation_plan(plant_type, region, soil_type, market_focus)
-                st.session_state.crop_rotation_result = {'plant_type': plant_type, 'rotations': rots_data.get('rotations', []), 'info': rots_data.get('info', {}), 'region': region, 'soil_type': soil_type}
+                st.session_state.crop_rotation_result = {'plant_type': plant_type, 'rotations': rots_data.get('rotations', []), 'info': rots_data.get('info', {}), 'region': region, 'soil_type': soil_type, 'regional_note': rots_data.get('regional_note', '')}
         else:
             st.warning('Please select or enter a plant type first.')
     if st.session_state.crop_rotation_result:
@@ -1467,6 +1536,9 @@ elif page == 'Crop Rotation Advisor':
             with col:
                 st.markdown(f'<div class="pd-rotation"><div class="pd-rotation-year">{label}</div><div class="pd-rotation-crop">{crop}</div><div class="pd-rotation-desc">{desc}</div></div>', unsafe_allow_html=True)
         st.markdown('<div class="pd-card" style="margin-top:16px;"><div class="pd-card-title">Benefits of Rotation</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;"><div style="font-size:0.85rem;color:var(--text-dim);">60–80% reduction in pathogen buildup</div><div style="font-size:0.85rem;color:var(--text-dim);">Improved soil health &amp; structure</div><div style="font-size:0.85rem;color:var(--text-dim);">Lower chemical input costs</div><div style="font-size:0.85rem;color:var(--text-dim);">Enhanced soil biodiversity</div></div></div>', unsafe_allow_html=True)
+        regional_note = res.get('regional_note') or rots_data.get('regional_note', '')
+        if regional_note:
+            st.markdown(f'<div class="pd-tips" style="margin-top:12px;"><div class="pd-tips-title">📍 Regional Advice ({res["region"]} · {res["soil_type"]})</div><div style="font-size:0.88rem;color:var(--text-dim);line-height:1.6;">{regional_note}</div></div>', unsafe_allow_html=True)
 
 # --- Cost Calculator & ROI ---
 else:
@@ -1500,7 +1572,11 @@ else:
         with col_ii4:
             market_price = st.number_input('Price/kg (Rs)', value=40, min_value=1, step=5)
         st.markdown('</div>', unsafe_allow_html=True)
-        auto_loss_pct = calculate_loss_percentage(diag.get('severity', 'moderate'), infected_count, total_plants=100)
+        auto_loss_pct = calculate_loss_percentage(
+            diag.get('severity', 'moderate'),
+            infected_count,
+            total_plants=diag.get('total_plants', max(infected_count, 100)),
+        )
         total_revenue = int(yield_kg * market_price)
         potential_loss = int(total_revenue * (auto_loss_pct / 100))
         st.markdown('<div style="margin:16px 0 8px;font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Loss Estimate (auto-calculated)</div>', unsafe_allow_html=True)
@@ -1515,7 +1591,7 @@ else:
         with col_calc:
             calc_btn = st.button('Calculate ROI', use_container_width=True, type='primary')
         if calc_btn:
-            org_benefit = potential_loss - organic_cost_total
+            org_benefit = potential_loss - organic_cost_total   # money saved by treating, minus cost
             chem_benefit = potential_loss - chemical_cost_total
             analysis = {
                 'total_value': total_revenue, 'loss_prevented': potential_loss, 'loss_percentage': auto_loss_pct,
