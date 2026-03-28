@@ -551,7 +551,7 @@ hr { border-color: var(--glass-border) !important; margin: 16px 0 !important; }
 # ─────────────────────────────────────────────────────────────
 _api_key = os.environ.get("GEMINI_API_KEY", "").strip()
 if not _api_key:
-    st.markdown("""
+    st.html("""
     <div class="glass" style="max-width:560px;margin:80px auto;border-color:rgba(224,90,90,0.3);">
         <div style="font-size:1.1rem;font-weight:600;color:#e05a5a;margin-bottom:10px;">⚠️ API Key Missing</div>
         <div style="color:var(--text-dim);line-height:1.7;font-size:0.9rem;">
@@ -560,7 +560,7 @@ if not _api_key:
             <code style="background:rgba(0,0,0,0.4);padding:6px 12px;border-radius:6px;display:inline-block;margin-top:8px;color:var(--accent2);">GEMINI_API_KEY = "your-key-here"</code><br><br>
             Get a free key at <a href="https://aistudio.google.com/apikey" style="color:var(--accent);">aistudio.google.com/apikey</a>
         </div>
-    </div>""", unsafe_allow_html=True)
+    </div>""")
     st.stop()
 
 try:
@@ -659,7 +659,7 @@ lang_instruction = LANG_INSTRUCTIONS.get(lang_code, LANG_INSTRUCTIONS["en"])
 # ─────────────────────────────────────────────────────────────
 col_logo, col_lang = st.columns([3, 1])
 with col_logo:
-    st.markdown("""
+    st.html("""
     <div class="top-header">
         <div class="logo-wrap">
             <div class="logo-icon">🌿</div>
@@ -668,10 +668,10 @@ with col_logo:
                 <div class="logo-sub">Plant Doctor · Gemini 2.5</div>
             </div>
         </div>
-    </div>""", unsafe_allow_html=True)
+    </div>""")
 
 with col_lang:
-    st.markdown("<div style='padding-top:22px;'></div>", unsafe_allow_html=True)
+    st.html("<div style='padding-top:22px;'></div>")
     chosen_lang = st.selectbox(
         "🌐 Language",
         list(LANGUAGES.keys()),
@@ -690,254 +690,255 @@ with col_lang:
 def render_messages():
     if not st.session_state.messages:
         welcome = {
-            "en": "🙏 Namaste! I'm your Kisan AI Plant Doctor, powered by Gemini 2.5.\n\nI can help you with:\n• 📸 **Diagnose** plant diseases from photos\n• 💊 **Treatment** recommendations (organic & chemical)\n• 💰 **Cost & ROI** for treatments\n• 🔄 **Crop rotation** planning\n• 🌾 Any farming question in your language\n\nTo get started, upload a leaf photo below or just ask me anything!",
-            "hi": "🙏 नमस्ते! मैं आपका किसान AI प्लांट डॉक्टर हूं।\n\nमैं आपकी मदद कर सकता हूं:\n• 📸 फोटो से पौधे की बीमारी **पहचानना**\n• 💊 **इलाज** की सलाह (जैविक और रासायनिक)\n• 💰 **लागत और मुनाफे** का हिसाब\n• 🔄 **फसल चक्र** की योजना\n• 🌾 खेती से जुड़ा कोई भी सवाल\n\nशुरू करने के लिए नीचे पत्ती की फोटो डालें या कोई सवाल पूछें!",
-            "pa": "🙏 ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡਾ ਕਿਸਾਨ AI ਪਲਾਂਟ ਡਾਕਟਰ ਹਾਂ।\n\nਮੈਂ ਤੁਹਾਡੀ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ:\n• 📸 ਫੋਟੋ ਤੋਂ ਪੌਦੇ ਦੀ ਬਿਮਾਰੀ **ਪਛਾਣਨਾ**\n• 💊 **ਇਲਾਜ** ਦੀ ਸਲਾਹ\n• 💰 **ਲਾਗਤ ਅਤੇ ਮੁਨਾਫਾ**\n• 🔄 **ਫਸਲ ਚੱਕਰ** ਯੋਜਨਾ\n\nਸ਼ੁਰੂ ਕਰਨ ਲਈ ਹੇਠਾਂ ਪੱਤੇ ਦੀ ਫੋਟੋ ਪਾਓ!",
+            "en": "🙏 Namaste! I'm your Kisan AI Plant Doctor, powered by Gemini 2.5.\n\nI can help you with:\n• 📸 Diagnose plant diseases from photos\n• 💊 Treatment recommendations (organic & chemical)\n• 💰 Cost & ROI for treatments\n• 🔄 Crop rotation planning\n• 🌾 Any farming question in your language\n\nUpload a leaf photo below or ask me anything!",
+            "hi": "🙏 नमस्ते! मैं आपका किसान AI प्लांट डॉक्टर हूं।\n\nमैं आपकी मदद कर सकता हूं:\n• 📸 फोटो से पौधे की बीमारी पहचानना\n• 💊 इलाज की सलाह (जैविक और रासायनिक)\n• 💰 लागत और मुनाफे का हिसाब\n• 🔄 फसल चक्र की योजना\n• 🌾 खेती से जुड़ा कोई भी सवाल\n\nनीचे पत्ती की फोटो डालें या कोई सवाल पूछें!",
+            "pa": "🙏 ਸਤ ਸ੍ਰੀ ਅਕਾਲ! ਮੈਂ ਤੁਹਾਡਾ ਕਿਸਾਨ AI ਪਲਾਂਟ ਡਾਕਟਰ ਹਾਂ।\n\nਮੈਂ ਤੁਹਾਡੀ ਮਦਦ ਕਰ ਸਕਦਾ ਹਾਂ:\n• 📸 ਫੋਟੋ ਤੋਂ ਪੌਦੇ ਦੀ ਬਿਮਾਰੀ ਪਛਾਣਨਾ\n• 💊 ਇਲਾਜ ਦੀ ਸਲਾਹ\n• 💰 ਲਾਗਤ ਅਤੇ ਮੁਨਾਫਾ\n• 🔄 ਫਸਲ ਚੱਕਰ ਯੋਜਨਾ\n\nਹੇਠਾਂ ਪੱਤੇ ਦੀ ਫੋਟੋ ਪਾਓ!",
+            "mr": "🙏 नमस्कार! मी तुमचा किसान AI प्लांट डॉक्टर आहे.\n\nमी तुम्हाला मदत करू शकतो:\n• 📸 फोटोवरून रोग ओळखणे\n• 💊 उपचाराची शिफारस\n• 💰 खर्च आणि नफा\n• 🔄 पीक रोटेशन\n\nखाली पानाचा फोटो अपलोड करा!",
+            "te": "🙏 నమస్కారం! నేను మీ కిసాన్ AI ప్లాంట్ డాక్టర్.\n\nనేను సహాయం చేయగలను:\n• 📸 ఫోటో ద్వారా వ్యాధి గుర్తింపు\n• 💊 చికిత్స సూచనలు\n• 💰 ఖర్చు మరియు లాభం\n• 🔄 పంట మార్పిడి\n\nకింద ఆకు ఫోటో అప్‌లోడ్ చేయండి!",
+            "ta": "🙏 வணக்கம்! நான் உங்கள் கிசான் AI தாவர மருத்துவர்.\n\nநான் உதவ முடியும்:\n• 📸 புகைப்படத்தில் இருந்து நோய் கண்டறிதல்\n• 💊 சிகிச்சை பரிந்துரைகள்\n• 💰 செலவு மற்றும் லாபம்\n• 🔄 பயிர் சுழற்சி\n\nகீழே இலை புகைப்படம் பதிவேற்றவும்!",
+            "kn": "🙏 ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಕಿಸಾನ್ AI ಸಸ್ಯ ವೈದ್ಯ.\n\nನಾನು ಸಹಾಯ ಮಾಡಬಲ್ಲೆ:\n• 📸 ಫೋಟೋ ಮೂಲಕ ರೋಗ ಪತ್ತೆ\n• 💊 ಚಿಕಿತ್ಸೆ ಸಲಹೆ\n• 💰 ವೆಚ್ಚ ಮತ್ತು ಲಾಭ\n• 🔄 ಬೆಳೆ ಸರದಿ\n\nಕೆಳಗೆ ಎಲೆಯ ಫೋಟೋ ಹಾಕಿ!",
+            "bn": "🙏 নমস্কার! আমি আপনার কিসান AI প্লান্ট ডাক্তার।\n\nআমি সাহায্য করতে পারি:\n• 📸 ছবি থেকে রোগ শনাক্তকরণ\n• 💊 চিকিৎসার পরামর্শ\n• 💰 খরচ এবং লাভ\n• 🔄 ফসল আবর্তন\n\nনিচে পাতার ছবি আপলোড করুন!",
+            "gu": "🙏 નમસ્તે! હું તમારો કિસાન AI છોડ ડૉક્ટર છું.\n\nહું મદદ કરી શકું:\n• 📸 ફોટો દ્વારા રોગ ઓળખ\n• 💊 સારવારની ભલામણ\n• 💰 ખર્ચ અને નફો\n• 🔄 પાક ચક્ર\n\nનીચે પાંદડાનો ફોટો અપલોડ કરો!",
+            "ur": "🙏 آداب! میں آپ کا کسان AI پلانٹ ڈاکٹر ہوں۔\n\nمیں آپ کی مدد کر سکتا ہوں:\n• 📸 تصویر سے بیماری کی تشخیص\n• 💊 علاج کی سفارش\n• 💰 لاگت اور منافع\n• 🔄 فصل چکر\n\nنیچے پتے کی تصویر اپلوڈ کریں!",
+            "or": "🙏 ନମସ୍କାର! ମୁଁ ଆପଣଙ୍କ କିସାନ AI ଉଦ୍ଭିଦ ଡାକ୍ତର।\n\nମୁଁ ସାହାଯ୍ୟ କରି ପାରିବି:\n• 📸 ଫଟୋରୁ ରୋଗ ଚିହ୍ନଟ\n• 💊 ଚିକିତ୍ସା ପରାମର୍ଶ\n\nତଳେ ପତ୍ର ଫଟୋ ଅପଲୋଡ଼ କରନ୍ତୁ!",
+            "ml": "🙏 നമസ്കാരം! ഞാൻ നിങ്ങളുടെ കിസാൻ AI സസ്യ ഡോക്ടർ.\n\nഞാൻ സഹായിക്കാം:\n• 📸 ഫോട്ടോ വഴി രോഗ നിർണ്ണയം\n• 💊 ചികിത്സ ശുപാർശ\n\nതാഴെ ഇലയുടെ ഫോട്ടോ അപ്‌ലോഡ് ചെയ്യൂ!",
+            "as": "🙏 নমস্কাৰ! মই আপোনাৰ কিসান AI উদ্ভিদ চিকিৎসক।\n\nমই সহায় কৰিব পাৰোঁ:\n• 📸 ফটোৰ পৰা ৰোগ চিনাক্ত\n• 💊 চিকিৎসাৰ পৰামৰ্শ\n\nতলত পাতৰ ফটো আপলোড কৰক!",
         }
         msg = welcome.get(lang_code, welcome["en"])
-        st.markdown(f"""
+        st.html(f"""
         <div class="msg-bot">
             <div class="avatar avatar-bot">🌿</div>
             <div class="bubble bubble-bot" style="white-space:pre-line;">{msg}</div>
-        </div>""", unsafe_allow_html=True)
+        </div>""")
         return
 
     for m in st.session_state.messages:
         role = m["role"]
         content = m["content"]
         if role == "user":
-            st.markdown(f"""
+            st.html(f"""
             <div class="msg-user">
                 <div class="avatar avatar-user">👤</div>
                 <div class="bubble bubble-user">{content}</div>
-            </div>""", unsafe_allow_html=True)
+            </div>""")
         else:
             if m.get("type") == "diagnosis":
                 render_diagnosis_card(m["data"])
             else:
-                st.markdown(f"""
+                st.html(f"""
                 <div class="msg-bot">
                     <div class="avatar avatar-bot">🌿</div>
                     <div class="bubble bubble-bot" style="white-space:pre-line;">{content}</div>
-                </div>""", unsafe_allow_html=True)
+                </div>""")
 
 def generate_pdf_report(d, lc="en"):
-    """Generate a clean PDF report in the selected language using reportlab."""
+    """Generate a multilingual PDF report with proper Unicode support and word-wrapped cells."""
     from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import cm
     from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    import io, os
+    import io, os, urllib.request
 
-    # Load Unicode font for Devanagari/Gurmukhi
+    # ── Font setup: try system fonts, then download NotoSans as fallback ──
     font_name = "Helvetica"
     bold_font = "Helvetica-Bold"
-    # Try to use a unicode font if available (for Hindi/Punjabi)
-    unicode_fonts = [
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",
-        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+
+    system_fonts = [
+        ("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",  "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf"),
+        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",      "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
+        ("/usr/share/fonts/truetype/freefont/FreeSans.ttf",      "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"),
     ]
-    for fp in unicode_fonts:
-        if os.path.exists(fp):
+    for rp, bp in system_fonts:
+        if os.path.exists(rp):
             try:
-                pdfmetrics.registerFont(TTFont("UniFont", fp))
-                font_name = "UniFont"
-                bold_font = "UniFont"
+                pdfmetrics.registerFont(TTFont("UniFont", rp))
+                pdfmetrics.registerFont(TTFont("UniFont-Bold", bp if os.path.exists(bp) else rp))
+                font_name, bold_font = "UniFont", "UniFont-Bold"
                 break
             except: pass
 
-    result = d.get("result", {})
-    plant = d.get("plant_type", "Unknown")
-    disease = result.get("disease_name", "Unknown")
-    severity = result.get("severity", "unknown").title()
-    conf = result.get("confidence", 0)
-    region = d.get("region", "")
-    soil = d.get("soil", "")
-    infected = d.get("infected_count", 0)
-    total = d.get("total_plants", 100)
-    loss_pct = calc_loss_pct(d.get("severity", severity.lower()), infected, total)
+    # If still Helvetica (Streamlit Cloud), download NotoSans
+    if font_name == "Helvetica":
+        cache_r = "/tmp/NotoSans-Regular.ttf"
+        cache_b = "/tmp/NotoSans-Bold.ttf"
+        urls = [
+            ("https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf", cache_r),
+            ("https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Bold.ttf", cache_b),
+        ]
+        try:
+            for url, path in urls:
+                if not os.path.exists(path):
+                    urllib.request.urlretrieve(url, path)
+            pdfmetrics.registerFont(TTFont("UniFont", cache_r))
+            pdfmetrics.registerFont(TTFont("UniFont-Bold", cache_b))
+            font_name, bold_font = "UniFont", "UniFont-Bold"
+        except: pass
 
-    # Labels per language
-    labels = {
-        "en": {
-            "title": "Kisan AI — Plant Disease Report",
-            "plant": "Plant", "disease": "Disease", "severity": "Severity",
-            "confidence": "Confidence", "region": "Region", "soil": "Soil Type",
-            "infected": "Infected Plants", "total": "Total Plants", "loss": "Est. Yield Loss",
-            "actions": "Immediate Actions", "organic": "Organic Treatments",
-            "chemical": "Chemical Treatments", "prevention": "Long-term Prevention",
-            "org_cost": "Organic Cost (per 100 plants)", "chem_cost": "Chemical Cost (per 100 plants)",
-            "notes": "Plant-Specific Notes", "generated": "Generated by Kisan AI",
-            "treatment": "Treatment", "qty": "Quantity", "price": "Price (₹)",
-        },
-        "hi": {
-            "title": "किसान AI — पौधे की बीमारी रिपोर्ट",
-            "plant": "पौधा", "disease": "बीमारी", "severity": "गंभीरता",
-            "confidence": "विश्वास", "region": "क्षेत्र", "soil": "मिट्टी का प्रकार",
-            "infected": "संक्रमित पौधे", "total": "कुल पौधे", "loss": "अनुमानित उपज हानि",
-            "actions": "तुरंत करें", "organic": "जैविक उपचार",
-            "chemical": "रासायनिक उपचार", "prevention": "दीर्घकालिक रोकथाम",
-            "org_cost": "जैविक लागत (100 पौधों के लिए)", "chem_cost": "रासायनिक लागत (100 पौधों के लिए)",
-            "notes": "पौधे विशेष नोट्स", "generated": "किसान AI द्वारा तैयार",
-            "treatment": "उपचार", "qty": "मात्रा", "price": "कीमत (₹)",
-        },
-        "pa": {
-            "title": "ਕਿਸਾਨ AI — ਪੌਦੇ ਦੀ ਬਿਮਾਰੀ ਰਿਪੋਰਟ",
-            "plant": "ਪੌਦਾ", "disease": "ਬਿਮਾਰੀ", "severity": "ਗੰਭੀਰਤਾ",
-            "confidence": "ਭਰੋਸਾ", "region": "ਖੇਤਰ", "soil": "ਮਿੱਟੀ ਦੀ ਕਿਸਮ",
-            "infected": "ਸੰਕਰਮਿਤ ਪੌਦੇ", "total": "ਕੁੱਲ ਪੌਦੇ", "loss": "ਅਨੁਮਾਨਿਤ ਝਾੜ ਨੁਕਸਾਨ",
-            "actions": "ਤੁਰੰਤ ਕਰੋ", "organic": "ਜੈਵਿਕ ਇਲਾਜ",
-            "chemical": "ਰਸਾਇਣਕ ਇਲਾਜ", "prevention": "ਲੰਬੇ ਸਮੇਂ ਦੀ ਰੋਕਥਾਮ",
-            "org_cost": "ਜੈਵਿਕ ਲਾਗਤ (100 ਪੌਦਿਆਂ ਲਈ)", "chem_cost": "ਰਸਾਇਣਕ ਲਾਗਤ (100 ਪੌਦਿਆਂ ਲਈ)",
-            "notes": "ਪੌਦੇ ਸੰਬੰਧੀ ਨੋਟਸ", "generated": "ਕਿਸਾਨ AI ਦੁਆਰਾ ਤਿਆਰ",
-            "treatment": "ਇਲਾਜ", "qty": "ਮਾਤਰਾ", "price": "ਕੀਮਤ (₹)",
-        },
+    # ── Data extraction ──
+    result    = d.get("result", {})
+    plant     = d.get("plant_type", "Unknown")
+    disease   = result.get("disease_name", "Unknown")
+    severity  = result.get("severity", "unknown").title()
+    conf      = result.get("confidence", 0)
+    region    = d.get("region", "")
+    soil      = d.get("soil", "")
+    infected  = d.get("infected_count", 0)
+    total     = d.get("total_plants", 100)
+    loss_pct  = calc_loss_pct(d.get("severity", severity.lower()), infected, total)
+
+    # ── Labels ──
+    LABELS = {
+        "en": dict(title="Kisan AI — Plant Disease Report", plant="Plant", disease="Disease",
+                   severity="Severity", confidence="Confidence", region="Region", soil="Soil Type",
+                   infected="Infected", total="Total Plants", loss="Est. Yield Loss",
+                   actions="Immediate Actions", organic="Organic Treatments", chemical="Chemical Treatments",
+                   prevention="Long-term Prevention", notes="Plant-Specific Notes",
+                   treatment="Treatment", qty="Quantity", price="Price (Rs.)", generated="Generated by Kisan AI"),
+        "hi": dict(title="किसान AI — पौधे की बीमारी रिपोर्ट", plant="पौधा", disease="बीमारी",
+                   severity="गंभीरता", confidence="विश्वास", region="क्षेत्र", soil="मिट्टी का प्रकार",
+                   infected="संक्रमित", total="कुल पौधे", loss="उपज हानि",
+                   actions="तुरंत करें", organic="जैविक उपचार", chemical="रासायनिक उपचार",
+                   prevention="दीर्घकालिक रोकथाम", notes="पौधे विशेष नोट्स",
+                   treatment="उपचार", qty="मात्रा", price="कीमत (Rs.)", generated="किसान AI द्वारा"),
+        "pa": dict(title="ਕਿਸਾਨ AI — ਪੌਦੇ ਦੀ ਬਿਮਾਰੀ ਰਿਪੋਰਟ", plant="ਪੌਦਾ", disease="ਬਿਮਾਰੀ",
+                   severity="ਗੰਭੀਰਤਾ", confidence="ਭਰੋਸਾ", region="ਖੇਤਰ", soil="ਮਿੱਟੀ ਦੀ ਕਿਸਮ",
+                   infected="ਸੰਕਰਮਿਤ", total="ਕੁੱਲ ਪੌਦੇ", loss="ਝਾੜ ਨੁਕਸਾਨ",
+                   actions="ਤੁਰੰਤ ਕਰੋ", organic="ਜੈਵਿਕ ਇਲਾਜ", chemical="ਰਸਾਇਣਕ ਇਲਾਜ",
+                   prevention="ਲੰਬੇ ਸਮੇਂ ਦੀ ਰੋਕਥਾਮ", notes="ਪੌਦੇ ਸੰਬੰਧੀ ਨੋਟਸ",
+                   treatment="ਇਲਾਜ", qty="ਮਾਤਰਾ", price="ਕੀਮਤ (Rs.)", generated="ਕਿਸਾਨ AI ਦੁਆਰਾ"),
     }
-    L = labels.get(lc, labels["en"])
+    L = LABELS.get(lc, LABELS["en"])
 
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4,
-                            leftMargin=2*cm, rightMargin=2*cm,
-                            topMargin=2*cm, bottomMargin=2*cm)
+    # ── Colors ──
+    GREEN      = colors.HexColor("#2d7a1f")
+    LT_GREEN   = colors.HexColor("#e8f5e2")
+    BLUE_HDR   = colors.HexColor("#1a6896")
+    LT_BLUE    = colors.HexColor("#e8f0f8")
+    DARK       = colors.HexColor("#1a1a1a")
+    GRAY       = colors.HexColor("#666666")
+    SEV_COLOR  = {"healthy": colors.HexColor("#2e7d32"), "mild": colors.HexColor("#1565c0"),
+                  "moderate": colors.HexColor("#e65100"), "severe": colors.HexColor("#b71c1c")}.get(severity.lower(), GRAY)
 
-    GREEN = colors.HexColor("#2d7a1f")
-    LIGHT_GREEN = colors.HexColor("#e8f5e2")
-    DARK = colors.HexColor("#1a2e1a")
-    GRAY = colors.HexColor("#666666")
-    RED = colors.HexColor("#c0392b")
-    ORANGE = colors.HexColor("#e67e22")
-
-    sev_color = {"healthy": GREEN, "mild": colors.HexColor("#2980b9"),
-                 "moderate": ORANGE, "severe": RED}.get(severity.lower(), GRAY)
-
-    def para(text, size=10, bold=False, color=DARK, space_before=0, space_after=4, align="LEFT"):
+    # ── Helper: Paragraph with word-wrap ──
+    def P(text, size=9, bold=False, color=DARK, align="LEFT", space_after=3):
         align_map = {"LEFT": 0, "CENTER": 1, "RIGHT": 2}
-        s = ParagraphStyle("custom", fontName=bold_font if bold else font_name,
-                           fontSize=size, textColor=color,
-                           spaceAfter=space_after, spaceBefore=space_before,
-                           alignment=align_map.get(align, 0), leading=size*1.4)
+        s = ParagraphStyle("p", fontName=bold_font if bold else font_name,
+                           fontSize=size, textColor=color, leading=size*1.45,
+                           spaceAfter=space_after, alignment=align_map.get(align, 0),
+                           wordWrap='CJK')
         return Paragraph(str(text), s)
 
-    def section_header(text):
-        return [
-            Spacer(1, 0.3*cm),
-            para(text, size=11, bold=True, color=GREEN, space_before=4),
-            HRFlowable(width="100%", thickness=1, color=LIGHT_GREEN, spaceAfter=4),
-        ]
+    def sec(title):
+        return [Spacer(1, 0.25*cm),
+                P(title, size=11, bold=True, color=GREEN, space_after=2),
+                HRFlowable(width="100%", thickness=1, color=LT_GREEN, spaceAfter=4)]
+
+    # ── Build PDF ──
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4,
+                            leftMargin=1.8*cm, rightMargin=1.8*cm,
+                            topMargin=1.8*cm, bottomMargin=1.8*cm)
+    W = A4[0] - 3.6*cm   # usable width
 
     story = []
 
-    # Header
-    story.append(para(L["title"], size=18, bold=True, color=GREEN, align="CENTER", space_after=4))
-    story.append(para(f"🗓 {datetime.now().strftime('%d %B %Y, %I:%M %p')}", size=9, color=GRAY, align="CENTER", space_after=2))
-    story.append(Spacer(1, 0.5*cm))
+    # Title
+    story.append(P(L["title"], size=17, bold=True, color=GREEN, align="CENTER", space_after=3))
+    story.append(P(datetime.now().strftime("%d %B %Y  |  %I:%M %p"), size=8, color=GRAY, align="CENTER", space_after=6))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=GREEN, spaceAfter=8))
 
-    # Summary table
-    sev_display = f"{severity}"
-    summary_data = [
-        [L["plant"], plant, L["region"], region],
-        [L["disease"], disease, L["soil"], soil],
-        [L["severity"], sev_display, L["confidence"], f"{conf}%"],
-        [L["infected"], str(infected), L["total"], str(total)],
-        [L["loss"], f"{loss_pct}%", "", ""],
+    # Summary table — 4 columns, Paragraph cells to prevent overflow
+    c1, c2, c3, c4 = W*0.18, W*0.32, W*0.18, W*0.32
+    def row(k1, v1, k2="", v2=""):
+        return [P(k1, bold=True, color=GREEN), P(str(v1)),
+                P(k2, bold=True, color=GREEN) if k2 else "", P(str(v2)) if v2 else ""]
+
+    summary = [
+        row(L["plant"],    plant,        L["region"],   region),
+        row(L["disease"],  disease,      L["soil"],     soil),
+        row(L["severity"], severity,     L["confidence"], f"{conf}%"),
+        row(L["infected"], f"{infected}/{total}", L["loss"], f"{loss_pct}%"),
     ]
-    summary_table = Table(summary_data, colWidths=[3.5*cm, 5.5*cm, 3.5*cm, 5.5*cm])
-    summary_table.setStyle(TableStyle([
+    st_ = Table(summary, colWidths=[c1, c2, c3, c4])
+    st_.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.white),
-        ('BACKGROUND', (0,0), (0,-1), LIGHT_GREEN),
-        ('BACKGROUND', (2,0), (2,-1), LIGHT_GREEN),
-        ('FONTNAME', (0,0), (0,-1), bold_font),
-        ('FONTNAME', (2,0), (2,-1), bold_font),
-        ('FONTSIZE', (0,0), (-1,-1), 9),
-        ('TEXTCOLOR', (0,0), (0,-1), GREEN),
-        ('TEXTCOLOR', (2,0), (2,-1), GREEN),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#dddddd")),
-        ('ROWBACKGROUNDS', (0,0), (-1,-1), [colors.white, colors.HexColor("#f9f9f9")]),
-        ('PADDING', (0,0), (-1,-1), 6),
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('TEXTCOLOR', (1,1), (1,1), sev_color),
-        ('FONTNAME', (1,1), (1,1), bold_font),
+        ('ROWBACKGROUNDS', (0,0), (-1,-1), [LT_GREEN, colors.white]),
+        ('GRID', (0,0), (-1,-1), 0.4, colors.HexColor("#cccccc")),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('PADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
     ]))
-    story.append(summary_table)
+    story.append(st_)
+
+    # ── Treatment table helper ──
+    def treatment_table(items, ttype, hdr_color, lt_color):
+        rows = [[P(L["treatment"], bold=True, color=colors.white, size=9),
+                 P(L["qty"],       bold=True, color=colors.white, size=9),
+                 P(L["price"],     bold=True, color=colors.white, size=9)]]
+        for t in items:
+            if not isinstance(t, str): continue
+            n = normalize_name(t)
+            info = get_treatment_info(ttype, n)
+            rows.append([P(n, size=9), P(info["quantity"], size=9), P(f"Rs.{info['cost']}", size=9)])
+        if len(rows) == 1:
+            return
+        tbl = Table(rows, colWidths=[W*0.40, W*0.38, W*0.22])
+        tbl.setStyle(TableStyle([
+            ('BACKGROUND', (0,0), (-1,0), hdr_color),
+            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, lt_color]),
+            ('GRID', (0,0), (-1,-1), 0.4, colors.HexColor("#cccccc")),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('PADDING', (0,0), (-1,-1), 5),
+            ('TOPPADDING', (0,0), (-1,-1), 6),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ]))
+        story.append(tbl)
 
     # Immediate actions
     actions = result.get("immediate_action", [])
     if actions:
-        story += section_header(f"⚡ {L['actions']}")
+        story += sec(f"⚡ {L['actions']}")
         for i, a in enumerate(actions, 1):
-            story.append(para(f"{i}. {a}", size=10, space_after=3))
+            story.append(P(f"{i}.  {a}", size=9, space_after=4))
 
     # Organic treatments
     org_treats = result.get("organic_treatments", [])
     if org_treats:
-        story += section_header(f"🌿 {L['organic']}")
-        org_rows = [[L["treatment"], L["qty"], L["price"]]]
-        for t in org_treats:
-            if not isinstance(t, str): continue
-            n = normalize_name(t)
-            info = get_treatment_info("organic", n)
-            org_rows.append([n, info["quantity"], f"Rs.{info['cost']}"])
-        t = Table(org_rows, colWidths=[6*cm, 7*cm, 4*cm])
-        t.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), GREEN),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('FONTNAME', (0,0), (-1,0), bold_font),
-            ('FONTSIZE', (0,0), (-1,-1), 9),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#dddddd")),
-            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, LIGHT_GREEN]),
-            ('PADDING', (0,0), (-1,-1), 6),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ]))
-        story.append(t)
+        story += sec(f"🌿 {L['organic']}")
+        treatment_table(org_treats, "organic", GREEN, LT_GREEN)
 
     # Chemical treatments
     chem_treats = result.get("chemical_treatments", [])
     if chem_treats:
-        story += section_header(f"⚗️ {L['chemical']}")
-        chem_rows = [[L["treatment"], L["qty"], L["price"]]]
-        for t in chem_treats:
-            if not isinstance(t, str): continue
-            n = normalize_name(t)
-            info = get_treatment_info("chemical", n)
-            chem_rows.append([n, info["quantity"], f"Rs.{info['cost']}"])
-        t2 = Table(chem_rows, colWidths=[6*cm, 7*cm, 4*cm])
-        t2.setStyle(TableStyle([
-            ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#2980b9")),
-            ('TEXTCOLOR', (0,0), (-1,0), colors.white),
-            ('FONTNAME', (0,0), (-1,0), bold_font),
-            ('FONTSIZE', (0,0), (-1,-1), 9),
-            ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#dddddd")),
-            ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#e8f0f8")]),
-            ('PADDING', (0,0), (-1,-1), 6),
-            ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ]))
-        story.append(t2)
+        story += sec(f"⚗️ {L['chemical']}")
+        treatment_table(chem_treats, "chemical", BLUE_HDR, LT_BLUE)
 
     # Prevention
     prevention = result.get("prevention_long_term", [])
     if prevention:
-        story += section_header(f"🛡️ {L['prevention']}")
-        for p in prevention[:4]:
-            story.append(para(f"• {p}", size=10, space_after=3))
+        story += sec(f"🛡️ {L['prevention']}")
+        for p in prevention[:5]:
+            story.append(P(f"•  {p}", size=9, space_after=4))
 
     # Notes
     notes = result.get("plant_specific_notes", "")
     if notes:
-        story += section_header(f"📌 {L['notes']}")
-        story.append(para(notes, size=10, color=DARK))
+        story += sec(f"📌 {L['notes']}")
+        story.append(P(notes, size=9, color=DARK))
 
     # Footer
-    story.append(Spacer(1, 0.8*cm))
-    story.append(HRFlowable(width="100%", thickness=1, color=LIGHT_GREEN))
-    story.append(para(f"{L['generated']} · kisanai.streamlit.app · {datetime.now().strftime('%d/%m/%Y')}", size=8, color=GRAY, align="CENTER", space_before=4))
+    story.append(Spacer(1, 0.6*cm))
+    story.append(HRFlowable(width="100%", thickness=1, color=LT_GREEN))
+    story.append(P(f"{L['generated']}  ·  {datetime.now().strftime('%d/%m/%Y')}",
+                   size=7, color=GRAY, align="CENTER", space_after=0))
 
     doc.build(story)
-    buffer.seek(0)
-    return buffer.read()
+    buf.seek(0)
+    return buf.read()
 
 
 def render_diagnosis_card(d):
@@ -1011,7 +1012,7 @@ def render_diagnosis_card(d):
     notes = result.get("plant_specific_notes", "")
     notes_html = f'<div class="sec-head">📌 Notes</div><div class="bubble bubble-bot" style="max-width:100%;margin:0;">{notes}</div>' if notes else ""
 
-    st.markdown(f"""
+    st.html(f"""
     <div class="msg-bot" style="align-items:flex-start;">
       <div class="avatar avatar-bot">🌿</div>
       <div style="flex:1;min-width:0;">
@@ -1056,13 +1057,13 @@ def render_diagnosis_card(d):
           </div>
           <div style="font-size:0.78rem;color:var(--text-dim);margin-top:2px;">Based on {infected} infected / {total} total plants · {loss_pct}% estimated yield loss</div>
 
-          {prev_html and f'<div class="sec-head">🛡️ Prevention</div>{prev_html}' or ''}
+          {('<div class="sec-head">🛡️ Prevention</div>' + prev_html) if prev_html else ''}
           {rot_html}
           {notes_html}
 
         </div>
       </div>
-    </div>""", unsafe_allow_html=True)
+    </div>""")
 
     # PDF Download button
     lc = d.get("lang_code", "en")
@@ -1085,12 +1086,12 @@ def render_diagnosis_card(d):
 # ─────────────────────────────────────────────────────────────
 render_messages()
 
-st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+st.html("<div style='height:12px;'></div>")
 
 # ─────────────────────────────────────────────────────────────
 # INPUT AREA
 # ─────────────────────────────────────────────────────────────
-st.markdown('<div class="input-bar-wrap">', unsafe_allow_html=True)
+st.html('<div class="input-bar-wrap">')
 
 with st.expander("📸 Upload leaf photo for diagnosis", expanded=False):
     plant_col, region_col = st.columns(2)
@@ -1138,7 +1139,7 @@ with st.expander("📸 Upload leaf photo for diagnosis", expanded=False):
                 thumb.thumbnail((120, 120), Image.Resampling.LANCZOS)
                 st.image(thumb, use_container_width=False, width=100)
             with thumb_cols[i * 2 + 1]:
-                st.markdown(f"<div style='font-size:0.75rem;color:var(--text-dim);padding-top:8px;'>📷 Photo {i+1}<br>{img.width}×{img.height}</div>", unsafe_allow_html=True)
+                st.html(f"<div style='font-size:0.75rem;color:var(--text-dim);padding-top:8px;'>📷 Photo {i+1}<br>{img.width}×{img.height}</div>")
 
     can_diagnose = uploaded and (chosen_plant is not None)
     if uploaded and chosen_plant is None:
@@ -1258,7 +1259,7 @@ with chat_input_col:
 with send_col:
     send = st.button("Send ➤", use_container_width=True, key="send_btn")
 
-st.markdown('</div>', unsafe_allow_html=True)
+st.html('</div>')
 
 # ─────────────────────────────────────────────────────────────
 # CHAT RESPONSE
